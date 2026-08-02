@@ -1,0 +1,49 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "Backend API for the TechNest E-Commerce Platform built with Express, TypeScript, Prisma, PostgreSQL, JWT Authentication, and Azure services.",
+  "keywords": [
+    "ecommerce",
+    "technest",
+    "express",
+    "nodejs",
+    "typescript",
+    "prisma",
+    "postgresql",
+    "rest-api",
+    "jwt",
+    "authentication",
+    "docker",
+    "azure",
+    "azure-blob-storage",
+    "azure-key-vault",
+    "ci-cd",
+    "devops",
+    "kubernetes",
+    "aks",
+    "terraform",
+    "swagger",
+    "zod"
+  ],
+  "license": "ISC",
+  "author": "Sin_Greed",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "boxen": "^8.0.1",
+    "chalk": "^6.0.0",
+    "cli-table3": "^0.6.5",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "figlet": "^1.11.4",
+    "gradient-string": "^3.0.0",
+    "nodemon": "^3.1.14",
+    "ora": "^9.4.1"
+  }
+}
