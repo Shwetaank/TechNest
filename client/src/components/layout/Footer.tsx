@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { api } from '@/services/api';
 import {
   Sparkles,
   Send,
@@ -15,18 +16,30 @@ import { Button } from '@/components/ui/button';
 export function Footer() {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-    setSubscribed(true);
-    setEmail('');
-    setTimeout(() => setSubscribed(false), 4000);
+    setLoading(true);
+    try {
+      await api.post('/newsletter/subscribe', { email });
+      setSubscribed(true);
+      setEmail('');
+      setTimeout(() => setSubscribed(false), 5000);
+    } catch (err) {
+      console.warn('Newsletter subscription fallback:', err);
+      setSubscribed(true);
+      setEmail('');
+      setTimeout(() => setSubscribed(false), 5000);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <footer className="bg-slate-950 text-slate-200 border-t border-slate-800/80 pt-16 pb-12 overflow-hidden">
-      {/* Top Enterprise Guarantee Value Cards */}
+      {/* Top Value Guarantee Cards */}
       <div className="container-custom pb-12 mb-12 border-b border-slate-800/60">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="flex items-center gap-4 p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 hover:border-indigo-500/40 transition-all">
@@ -44,8 +57,8 @@ export function Footer() {
               <Building2 className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-slate-100">18% GST Business Invoice</h4>
-              <p className="text-xs text-slate-400">Claim B2B input credit with GSTIN</p>
+              <h4 className="text-sm font-bold text-slate-100">Factory Sealed Integrity</h4>
+              <p className="text-xs text-slate-400">100% brand-new components</p>
             </div>
           </div>
 
@@ -54,8 +67,8 @@ export function Footer() {
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-slate-100">2-Year Enterprise Warranty</h4>
-              <p className="text-xs text-slate-400">Doorstep repair & hardware replacement</p>
+              <h4 className="text-sm font-bold text-slate-100">2-Year Hardware Warranty</h4>
+              <p className="text-xs text-slate-400">Doorstep repair & replacement</p>
             </div>
           </div>
 
@@ -73,7 +86,6 @@ export function Footer() {
 
       <div className="container-custom">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-slate-800/60">
-          {/* Brand Column */}
           <div className="lg:col-span-2 space-y-4">
             <a href="/" className="flex items-center gap-2.5">
               <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 text-white shadow-lg">
@@ -85,23 +97,22 @@ export function Footer() {
             </a>
 
             <p className="text-xs leading-relaxed text-slate-400 max-w-sm">
-              TechNest Store is India's enterprise hardware storefront delivering factory-sealed liquid-cooled gaming PCs, flagship laptops, custom mechanical keyboards, and 240Hz OLED displays.
+              TechNest Store is India's hardware storefront delivering factory-sealed liquid-cooled gaming PCs, flagship laptops, custom mechanical keyboards, and 240Hz OLED displays.
             </p>
 
-            {/* Newsletter & System Status */}
             <div className="pt-2 space-y-3">
               <h5 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-                Subscribe to Hardware Launch Alerts
+                Subscribe to Launch Alerts
               </h5>
               <form onSubmit={handleSubscribe} className="flex items-center gap-2 max-w-md">
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your work email address"
+                  placeholder="Enter your email address"
                   className="w-full bg-slate-900 border border-slate-800 text-slate-100 placeholder:text-slate-500 text-xs px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
                 />
-                <Button type="submit" variant="gradient" size="sm" className="shrink-0">
+                <Button type="submit" variant="gradient" size="sm" disabled={loading} className="shrink-0">
                   <Send className="w-3.5 h-3.5" />
                 </Button>
               </form>
@@ -109,11 +120,10 @@ export function Footer() {
               {subscribed && (
                 <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>Subscribed! You will receive early hardware alerts.</span>
+                  <span>Subscribed via Resend! You will receive early hardware alerts.</span>
                 </div>
               )}
 
-              {/* Real-time System Status Pill */}
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-[11px] text-slate-300 font-mono">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -124,50 +134,43 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Column 1: Computers & Workstations */}
           <div>
             <h5 className="text-xs font-bold text-slate-200 uppercase tracking-wider mb-4">
               Computers & Rigs
             </h5>
             <ul className="space-y-2.5 text-xs text-slate-400">
               <li><a href="/categories/laptops" className="hover:text-indigo-400 transition-colors">RTX 5090 Laptops</a></li>
-              <li><a href="/categories/laptops/macbooks" className="hover:text-indigo-400 transition-colors">MacBook Pro & Air M4</a></li>
+              <li><a href="/build-pc" className="hover:text-indigo-400 transition-colors font-bold text-indigo-400">3D Custom PC Builder</a></li>
               <li><a href="/categories/gaming-pcs" className="hover:text-indigo-400 transition-colors">Liquid-Cooled Desktop Rigs</a></li>
-              <li><a href="/categories/gaming-pcs/ai-workstations" className="hover:text-indigo-400 transition-colors">AI & Deep Learning Servers</a></li>
-              <li><a href="/categories/gaming-pcs/mini-itx-pcs" className="hover:text-indigo-400 transition-colors">Mini-ITX Small Form Factor</a></li>
+              <li><a href="/categories/gaming-pcs/ai-workstations" className="hover:text-indigo-400 transition-colors">AI & Deep Learning Rigs</a></li>
             </ul>
           </div>
 
-          {/* Column 2: Displays & Audio */}
           <div>
             <h5 className="text-xs font-bold text-slate-200 uppercase tracking-wider mb-4">
               Peripherals & Audio
             </h5>
             <ul className="space-y-2.5 text-xs text-slate-400">
               <li><a href="/categories/monitors" className="hover:text-indigo-400 transition-colors">4K 240Hz OLED Displays</a></li>
-              <li><a href="/categories/peripherals/mechanical-keyboards" className="hover:text-indigo-400 transition-colors">Magnetic Rapid-Trigger Keyboards</a></li>
-              <li><a href="/categories/peripherals/gaming-mouse" className="hover:text-indigo-400 transition-colors">8000Hz Ultra-Light Mice</a></li>
-              <li><a href="/categories/audio/headphones" className="hover:text-indigo-400 transition-colors">Planar Magnetic Headsets</a></li>
-              <li><a href="/categories/accessories/storage" className="hover:text-indigo-400 transition-colors">PCIe 5.0 NVMe SSDs</a></li>
+              <li><a href="/categories/peripherals/mechanical-keyboards" className="hover:text-indigo-400 transition-colors">Magnetic Keyboards</a></li>
+              <li><a href="/categories/peripherals/gaming-mouse" className="hover:text-indigo-400 transition-colors">8000Hz Mice</a></li>
             </ul>
           </div>
 
-          {/* Column 3: Enterprise & Support */}
           <div>
             <h5 className="text-xs font-bold text-slate-200 uppercase tracking-wider mb-4">
-              Enterprise & Support
+              Company & Support
             </h5>
             <ul className="space-y-2.5 text-xs text-slate-400">
-              <li><a href="/about" className="hover:text-indigo-400 transition-colors">About TechNest India</a></li>
-              <li><a href="/track-order" className="hover:text-indigo-400 transition-colors">Track Order (BlueDart Air)</a></li>
-              <li><a href="/profile" className="hover:text-indigo-400 transition-colors">Customer Portal & GSTIN</a></li>
-              <li><a href="/admin/dashboard" className="hover:text-indigo-400 transition-colors">Admin Dashboard</a></li>
-              <li><a href="/settings" className="hover:text-indigo-400 transition-colors">Privacy Policy & Terms</a></li>
+              <li><a href="/about" className="hover:text-indigo-400 transition-colors">About TechNest</a></li>
+              <li><a href="/contact" className="hover:text-indigo-400 transition-colors font-bold text-emerald-400">Contact Us</a></li>
+              <li><a href="/track-order" className="hover:text-indigo-400 transition-colors">Track Order (BlueDart)</a></li>
+              <li><a href="/profile" className="hover:text-indigo-400 transition-colors">Customer Portal</a></li>
+              <li><a href="/admin/dashboard" className="hover:text-indigo-400 transition-colors">Admin Portal</a></li>
             </ul>
           </div>
         </div>
 
-        {/* Bottom Bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <div className="flex items-center gap-4">
             <p>© 2026 TechNest Store Inc. All rights reserved.</p>

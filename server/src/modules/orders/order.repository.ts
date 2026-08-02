@@ -55,7 +55,7 @@ export class OrderRepository {
         },
       });
 
-      // 3. Stock Allocation / Decrement Rule: Stock decreases only after successful payment
+      // 3. Stock Allocation: Decrement inventory stock on successful payment
       for (const item of cartItems) {
         if (item.variantId) {
           await tx.productVariant.update({
@@ -65,12 +65,12 @@ export class OrderRepository {
         }
       }
 
-      // 4. Create Initial Payment Record
+      // 4. Create Initial Payment Record via DUMMY_GATEWAY
       await tx.payment.create({
         data: {
           orderId: order.id,
-          provider: 'RAZORPAY',
-          transactionId: `TXN-${Date.now()}`,
+          provider: 'DUMMY_GATEWAY' as any,
+          transactionId: `DUMMY-TXN-${Date.now()}`,
           amount: totalAmount,
           currency: 'INR',
           status: 'COMPLETED',
@@ -109,12 +109,10 @@ export class OrderRepository {
     const order = await prisma.order.findUnique({ where: { id } });
     if (!order) throw new Error('Order not found');
 
-    // Rule: Orders become immutable after shipping (DELIVERED)
     if (order.status === 'DELIVERED') {
       throw new Error('Completed and delivered orders are immutable.');
     }
 
-    // Rule: Cancelled orders restore inventory
     if (status === 'CANCELLED' && order.status !== 'CANCELLED') {
       const items = await prisma.orderItem.findMany({ where: { orderId: id } });
       await prisma.$transaction(async (tx) => {

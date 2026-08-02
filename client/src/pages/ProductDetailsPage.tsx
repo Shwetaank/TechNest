@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { fetchProductById } from '@/services/productService';
 import { FEATURED_PRODUCTS } from '@/constants/products';
 import { useCart } from '@/store/cartStore';
 import { useWishlist } from '@/store/wishlistStore';
+import type { Product } from '@/types';
 import {
   Star,
   ShoppingBag,
@@ -17,16 +20,40 @@ import { Badge } from '@/components/ui/Badge';
 import { ProductCard } from '@/components/product/ProductCard';
 
 export function ProductDetailsPage() {
-  const product = FEATURED_PRODUCTS[0]; // Titan Pro M4 Max
+  const { id } = useParams<{ id: string }>();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
 
-  const [selectedImage, setSelectedImage] = useState(product.image);
+  const [selectedImage, setSelectedImage] = useState<string>('');
   const [pincode, setPincode] = useState('');
   const [pincodeChecked, setPincodeChecked] = useState(false);
   const [selectedRam, setSelectedRam] = useState('64GB');
   const [selectedStorage] = useState('2TB SSD');
   const [added, setAdded] = useState(false);
+
+  useEffect(() => {
+    const targetId = id || 'titan-pro-m4';
+    fetchProductById(targetId).then((data) => {
+      const p = data || FEATURED_PRODUCTS[0];
+      setProduct(p);
+      setSelectedImage(p.image);
+      setLoading(false);
+    });
+  }, [id]);
+
+  if (loading || !product) {
+    return (
+      <div className="py-20 bg-background min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-muted-foreground font-bold">Loading product details from backend API...</p>
+        </div>
+      </div>
+    );
+  }
 
   const inWishlist = isInWishlist(product.id);
 
@@ -59,7 +86,7 @@ export function ProductDetailsPage() {
           <div className="lg:col-span-6 space-y-4">
             <div className="aspect-[4/3] rounded-3xl overflow-hidden border border-border bg-muted/30 relative shadow-lg">
               <img
-                src={selectedImage}
+                src={selectedImage || product.image}
                 alt={product.name}
                 className="w-full h-full object-cover"
               />
@@ -74,7 +101,7 @@ export function ProductDetailsPage() {
                 <button
                   key={idx}
                   onClick={() => setSelectedImage(img!)}
-                  className={`w-20 h-20 rounded-2xl overflow-hidden border-2 transition-all ${
+                  className={`w-20 h-20 rounded-2xl overflow-hidden border-2 transition-all cursor-pointer ${
                     selectedImage === img ? 'border-primary scale-105 shadow-md' : 'border-border/60 opacity-75'
                   }`}
                 >
@@ -119,14 +146,16 @@ export function ProductDetailsPage() {
                     ₹{product.originalPrice.toLocaleString('en-IN')}
                   </span>
                 )}
-                <span className="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-full">
-                  Save ₹{(product.originalPrice! - product.price).toLocaleString('en-IN')} (11% OFF)
-                </span>
+                {product.originalPrice && (
+                  <span className="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-full">
+                    Save ₹{(product.originalPrice - product.price).toLocaleString('en-IN')} (11% OFF)
+                  </span>
+                )}
               </div>
 
               <div className="flex items-center gap-2 text-xs text-indigo-400 font-semibold pt-1">
                 <CreditCard className="w-4 h-4" />
-                <span>No-Cost EMI from ₹{product.emiStartingAt?.toLocaleString('en-IN')}/month on HDFC / ICICI Credit Cards</span>
+                <span>No-Cost EMI from ₹{product.emiStartingAt?.toLocaleString('en-IN') || '4,999'}/month on HDFC / ICICI Credit Cards</span>
               </div>
             </div>
 
@@ -139,7 +168,7 @@ export function ProductDetailsPage() {
                   <button
                     key={ram}
                     onClick={() => setSelectedRam(ram)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
+                    className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                       selectedRam === ram
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'border-border bg-card text-muted-foreground'
@@ -214,7 +243,7 @@ export function ProductDetailsPage() {
                         inStock: product.inStock,
                       })
                 }
-                className={`p-3.5 rounded-2xl border transition-all ${
+                className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
                   inWishlist
                     ? 'border-rose-500 bg-rose-500/10 text-rose-500'
                     : 'border-border bg-card text-muted-foreground hover:text-foreground'

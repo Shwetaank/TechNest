@@ -15,13 +15,12 @@ import productRoutes from './routes/product.routes.js';
 import cartRoutes from './routes/cart.routes.js';
 import orderRoutes from './routes/order.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
+import newsletterRoutes from './routes/newsletter.routes.js';
 
 const app = express();
 
-// Disable x-powered-by header to conceal Express signature
 app.disable('x-powered-by');
 
-// Security & Core Middlewares
 app.use(helmet());
 app.use(
   cors({
@@ -38,7 +37,6 @@ if (config.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// Observability & Health Endpoints
 app.get('/health', (_req, res) => {
   return sendResponse(res, 200, 'TechNest API Health Status OK', {
     status: 'healthy',
@@ -55,28 +53,19 @@ app.get('/live', (_req, res) => {
   return sendResponse(res, 200, 'Server liveness probe passed', { alive: true });
 });
 
-app.get('/metrics', (_req, res) => {
-  return sendResponse(res, 200, 'Prometheus Metrics Placeholder', {
-    cpuUsage: process.cpuUsage(),
-    memoryUsage: process.memoryUsage(),
-  });
-});
-
-// API v1 Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/products', productRoutes);
 app.use('/api/v1/cart', cartRoutes);
 app.use('/api/v1/orders', orderRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
+app.use('/api/v1/newsletter', newsletterRoutes);
 
-// 404 Route Not Found Handler
 app.use((req: Request, res: Response) => {
   return sendResponse(res, 404, `Cannot ${req.method} ${req.originalUrl}`, {}, {}, [
     `Route ${req.method} ${req.originalUrl} not found`,
   ]);
 });
 
-// Centralized Error Handling Middleware
 app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
   const requestId = (req.headers['x-request-id'] as string) || 'N/A';
 

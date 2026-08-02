@@ -7,7 +7,6 @@ import { SearchModal } from './SearchModal';
 import { CartDrawer } from '@/components/cart/CartDrawer';
 import { WishlistDrawer } from './WishlistDrawer';
 import { BackToTop } from './BackToTop';
-import { FloatingSupportButton } from './FloatingSupportButton';
 import { Breadcrumbs } from './Breadcrumbs';
 import type { BreadcrumbItem } from './Breadcrumbs';
 
@@ -51,7 +50,6 @@ export function AppLayout({ children, breadcrumbs }: AppLayoutProps) {
       <CartDrawer />
       <WishlistDrawer />
       <BackToTop />
-      <FloatingSupportButton />
     </div>
   );
 }

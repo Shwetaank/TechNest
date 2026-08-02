@@ -53,6 +53,7 @@ enum PaymentStatus {
 }
 
 enum PaymentProvider {
+  DUMMY_GATEWAY
   RAZORPAY
   STRIPE
   PAYPAL
@@ -130,8 +131,8 @@ model Role {
 
 model Permission {
   id          String           @id @default(uuid()) @db.Uuid
-  action      String           // e.g. "read", "create", "delete"
-  resource    String           // e.g. "products", "orders", "users"
+  action      String
+  resource    String
   roles       RolePermission[]
 
   @@unique([action, resource])
@@ -447,12 +448,12 @@ model OrderItem {
 model Payment {
   id            String          @id @default(uuid()) @db.Uuid
   orderId       String          @db.Uuid
-  provider      PaymentProvider @default(RAZORPAY)
+  provider      PaymentProvider @default(DUMMY_GATEWAY)
   transactionId String          @unique
   amount        Float
   currency      String          @default("INR")
   status        PaymentStatus   @default(PENDING)
-  paymentMethod String          // UPI, CARD, EMI, COD
+  paymentMethod String
   rawMetadata   Json?
 
   createdAt     DateTime        @default(now())
@@ -546,7 +547,7 @@ model Notification {
   userId    String   @db.Uuid
   title     String
   message   String
-  type      String   @default("INFO") // ORDER_UPDATE, PROMO, SYSTEM
+  type      String   @default("INFO")
   isRead    Boolean  @default(false)
 
   createdAt DateTime @default(now())
@@ -559,8 +560,8 @@ model Notification {
 model AuditLog {
   id        String   @id @default(uuid()) @db.Uuid
   userId    String?  @db.Uuid
-  action    String   // e.g. "USER_LOGIN", "ORDER_CREATED", "STOCK_UPDATE"
-  entity    String   // e.g. "Order", "User", "Product"
+  action    String
+  entity    String
   entityId  String?
   ipAddress String?
   payload   Json?

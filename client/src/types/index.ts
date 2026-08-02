@@ -52,6 +52,8 @@ export interface NavigationLink {
   href: string;
   badge?: string;
   isMega?: boolean;
+  hasMegaMenu?: boolean;
+  isHighlight?: boolean;
 }
 
 export interface AnnouncementItem {
@@ -93,10 +95,12 @@ export interface WishlistItem {
 export interface UserProfile {
   id: string;
   name: string;
+  fullName?: string;
   email: string;
   phone?: string;
   avatar?: string;
-  role: 'customer' | 'admin';
+  role: 'customer' | 'admin' | string;
+  roles?: string[];
   gstin?: string;
   companyName?: string;
 }

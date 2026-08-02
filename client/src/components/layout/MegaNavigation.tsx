@@ -26,34 +26,34 @@ const ICON_MAP: Record<string, React.ElementType> = {
 
 interface MegaNavigationProps {
   activeCategory: string | null;
-  onCategoryHover: (categoryId: string | null) => void;
+  onCategoryHover?: (categoryId: string | null) => void;
   onClose: () => void;
 }
 
 export function MegaNavigation({
   activeCategory,
-  onCategoryHover,
   onClose,
 }: MegaNavigationProps) {
   const [selectedCatId, setSelectedCatId] = useState<string>(
-    activeCategory || MEGA_CATEGORIES[0].id
+    activeCategory && activeCategory !== 'categories'
+      ? activeCategory
+      : MEGA_CATEGORIES[0].id
   );
 
   const activeCategoryData: CategoryItem =
-    MEGA_CATEGORIES.find((c) => c.id === (activeCategory || selectedCatId)) ||
-    MEGA_CATEGORIES[0];
+    MEGA_CATEGORIES.find((c) => c.id === selectedCatId) || MEGA_CATEGORIES[0];
 
   if (!activeCategory) return null;
 
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 5 }}
-        transition={{ duration: 0.2 }}
+        exit={{ opacity: 0, y: 4 }}
+        transition={{ duration: 0.18 }}
         onMouseLeave={onClose}
-        className="absolute top-full left-0 right-0 z-40 bg-background/95 backdrop-blur-2xl border-b border-border shadow-2xl overflow-hidden"
+        className="absolute top-full left-0 right-0 z-50 bg-background/95 backdrop-blur-2xl border-b border-border shadow-2xl overflow-hidden text-left"
       >
         <div className="container-custom py-8">
           <div className="grid grid-cols-12 gap-8">
@@ -68,13 +68,10 @@ export function MegaNavigation({
                 return (
                   <button
                     key={cat.id}
-                    onMouseEnter={() => {
-                      setSelectedCatId(cat.id);
-                      onCategoryHover(cat.id);
-                    }}
+                    onMouseEnter={() => setSelectedCatId(cat.id)}
                     onClick={onClose}
                     className={cn(
-                      'w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left group',
+                      'w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left group cursor-pointer',
                       isSelected
                         ? 'bg-primary/10 text-primary font-semibold shadow-xs'
                         : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -171,7 +168,6 @@ export function MegaNavigation({
                       alt={activeCategoryData.featuredProduct.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
 
                   <h4 className="text-sm font-bold text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors">
@@ -180,7 +176,7 @@ export function MegaNavigation({
 
                   <div className="flex items-center justify-between">
                     <span className="text-base font-extrabold text-foreground">
-                      ${activeCategoryData.featuredProduct.price.toLocaleString()}
+                      ₹{activeCategoryData.featuredProduct.price.toLocaleString('en-IN')}
                     </span>
                     <a
                       href={`/product/${activeCategoryData.featuredProduct.id}`}

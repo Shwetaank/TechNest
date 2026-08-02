@@ -1,7 +1,11 @@
+import { useAuth } from '@/store/authStore';
 import { CheckCircle2, FileText, ArrowRight, Truck, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function OrderSuccessPage() {
+  const { user } = useAuth();
+  const displayName = user?.fullName || user?.name || 'Shwetank Sharma';
+
   return (
     <div className="py-16 bg-background border-b border-border/60 min-h-screen">
       <div className="container-custom max-w-2xl mx-auto text-center space-y-6">
@@ -36,7 +40,7 @@ export function OrderSuccessPage() {
             <div>
               <span className="font-bold text-foreground block">Shipping Address</span>
               <span className="text-muted-foreground">
-                Aarav Sharma • 100 Feet Road, Indiranagar, Bengaluru, Karnataka - 560001
+                {displayName} • 100 Feet Road, Indiranagar, Bengaluru, Karnataka - 560001
               </span>
             </div>
           </div>

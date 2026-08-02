@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useCart } from '@/store/cartStore';
 import { useWishlist } from '@/store/wishlistStore';
-import { NAV_LINKS, MEGA_CATEGORIES } from '@/constants/navigation';
+import { useAuth } from '@/store/authStore';
+import { NAV_LINKS } from '@/constants/navigation';
 import { MegaNavigation } from './MegaNavigation';
 import {
   Search,
@@ -14,7 +15,9 @@ import {
   Menu,
   X,
   ChevronDown,
-  Sparkles,
+  LogOut,
+  ShieldCheck,
+  Package,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -27,10 +30,12 @@ export function Header({ onOpenSearch }: HeaderProps) {
   const { resolvedTheme, toggleTheme } = useTheme();
   const { openCart, itemCount: cartCount, subtotal } = useCart();
   const { openWishlist, itemCount: wishlistCount } = useWishlist();
+  const { user, isAuthenticated, logout } = useAuth();
 
   const [activeMegaCategory, setActiveMegaCategory] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -55,83 +60,72 @@ export function Header({ onOpenSearch }: HeaderProps) {
     >
       <div className="container-custom">
         <div className="flex items-center justify-between gap-4">
+          {/* Logo & Main Nav */}
           <div className="flex items-center gap-8">
             <a
               href="/"
-              className="flex items-center gap-2.5 group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
+              className="flex items-center gap-2.5 text-xl font-black font-heading tracking-tight group"
             >
-              <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-primary via-indigo-600 to-accent text-white shadow-md shadow-primary/20 group-hover:scale-105 transition-transform duration-300">
-                <Sparkles className="w-5 h-5 animate-pulse" />
-                <div className="absolute inset-0 rounded-xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg shadow-md shadow-primary/30 group-hover:scale-105 transition-transform">
+                ⚡
               </div>
-
               <div className="flex flex-col">
-                <span className="text-xl font-extrabold tracking-tight text-foreground flex items-center gap-1 font-heading">
-                  Tech<span className="gradient-text">Nest</span>
+                <span className="leading-none text-foreground text-lg font-extrabold tracking-tight">
+                  Tech<span className="text-primary font-black">Nest</span>
                 </span>
-                <span className="text-[9px] font-bold text-muted-foreground tracking-widest uppercase -mt-1">
-                  Enterprise Store
+                <span className="text-[9px] font-bold text-muted-foreground tracking-wider uppercase leading-none mt-0.5">
+                  Store • Enterprise
                 </span>
               </div>
             </a>
 
+            {/* Desktop Navigation Links */}
             <nav className="hidden lg:flex items-center gap-1">
-              {NAV_LINKS.map((link) => {
-                if (link.isMega) {
-                  return (
-                    <div
-                      key={link.label}
-                      className="relative"
-                      onMouseEnter={() => setActiveMegaCategory(MEGA_CATEGORIES[0].id)}
-                    >
-                      <button
-                        onClick={() =>
-                          setActiveMegaCategory((prev) =>
-                            prev ? null : MEGA_CATEGORIES[0].id
-                          )
-                        }
-                        className={cn(
-                          'flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold transition-colors',
-                          activeMegaCategory
-                            ? 'text-primary bg-primary/10'
-                            : 'text-foreground/80 hover:text-foreground hover:bg-muted/60'
-                        )}
-                      >
-                        <span>{link.label}</span>
-                        <ChevronDown
-                          className={cn(
-                            'w-4 h-4 transition-transform duration-200',
-                            activeMegaCategory && 'rotate-180 text-primary'
-                          )}
-                        />
-                      </button>
-                    </div>
-                  );
-                }
-
-                return (
+              {NAV_LINKS.map((link) => (
+                <div
+                  key={link.label}
+                  className="relative py-2"
+                  onMouseEnter={() =>
+                    handleCategoryHover(link.isMega ? link.label.toLowerCase() : null)
+                  }
+                >
                   <a
-                    key={link.label}
                     href={link.href}
-                    onMouseEnter={() => setActiveMegaCategory(null)}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold text-foreground/80 hover:text-foreground hover:bg-muted/60 transition-colors"
+                    className={cn(
+                      'px-3.5 py-2 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center gap-1.5',
+                      link.badge
+                        ? 'text-primary font-bold bg-primary/10 hover:bg-primary/20'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                    )}
                   >
-                    <span>{link.label}</span>
-                    {link.badge && (
-                      <span className="text-[10px] font-extrabold bg-primary/15 text-primary px-2 py-0.5 rounded-full">
-                        {link.badge}
-                      </span>
+                    {link.label}
+                    {link.isMega && (
+                      <ChevronDown className="w-3.5 h-3.5 transition-transform duration-200 group-hover:rotate-180" />
                     )}
                   </a>
-                );
-              })}
+
+                  {link.isMega && activeMegaCategory === link.label.toLowerCase() && (
+                    <div
+                      onMouseLeave={() => handleCategoryHover(null)}
+                      className="absolute top-full left-0 pt-2 animate-in fade-in slide-in-from-top-2 duration-200"
+                    >
+                      <MegaNavigation
+                        activeCategory={activeMegaCategory}
+                        onCategoryHover={handleCategoryHover}
+                        onClose={() => setActiveMegaCategory(null)}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
             </nav>
           </div>
 
+          {/* Center Search Trigger */}
           <div className="hidden md:flex flex-1 max-w-sm mx-4">
             <button
               onClick={onOpenSearch}
-              className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-muted/60 hover:bg-muted border border-border/60 text-muted-foreground text-xs transition-all shadow-xs group"
+              className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-muted/60 hover:bg-muted border border-border/60 text-muted-foreground text-xs transition-all shadow-xs group cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
                 <Search className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -145,10 +139,11 @@ export function Header({ onOpenSearch }: HeaderProps) {
             </button>
           </div>
 
+          {/* Right Action Icons */}
           <div className="flex items-center gap-2">
             <button
               onClick={onOpenSearch}
-              className="flex md:hidden p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              className="flex md:hidden p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
               aria-label="Open search"
             >
               <Search className="w-5 h-5" />
@@ -156,7 +151,7 @@ export function Header({ onOpenSearch }: HeaderProps) {
 
             <button
               onClick={toggleTheme}
-              className="p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors relative"
+              className="p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors relative cursor-pointer"
               aria-label="Toggle light/dark theme"
             >
               {resolvedTheme === 'dark' ? (
@@ -168,7 +163,7 @@ export function Header({ onOpenSearch }: HeaderProps) {
 
             <button
               onClick={openWishlist}
-              className="p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors relative"
+              className="p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors relative cursor-pointer"
               aria-label="Open wishlist"
             >
               <Heart className="w-5 h-5" />
@@ -181,7 +176,7 @@ export function Header({ onOpenSearch }: HeaderProps) {
 
             <button
               onClick={openCart}
-              className="flex items-center gap-2.5 p-2 rounded-xl bg-primary/10 hover:bg-primary/15 border border-primary/20 text-foreground transition-all group"
+              className="flex items-center gap-2.5 p-2 rounded-xl bg-primary/10 hover:bg-primary/15 border border-primary/20 text-foreground transition-all group cursor-pointer"
               aria-label="Open shopping cart"
             >
               <div className="relative p-1">
@@ -197,16 +192,80 @@ export function Header({ onOpenSearch }: HeaderProps) {
                   Cart
                 </span>
                 <span className="text-xs font-extrabold text-foreground leading-none mt-0.5">
-                  ${subtotal.toLocaleString(undefined, { minimumFractionDigits: 0 })}
+                  ₹{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
                 </span>
               </div>
             </button>
 
-            <a href="/profile" className="hidden sm:block">
-              <Button variant="ghost" size="icon" className="rounded-xl">
-                <User className="w-5 h-5 text-muted-foreground" />
-              </Button>
-            </a>
+            {/* Authenticated User Menu or Login Link */}
+            {isAuthenticated ? (
+              <div className="relative">
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="flex items-center gap-2 p-1.5 pl-2.5 rounded-xl bg-card border border-border/80 text-foreground hover:border-primary transition-all cursor-pointer"
+                >
+                  <div className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center uppercase">
+                    {(user?.fullName || user?.name || 'U').charAt(0)}
+                  </div>
+                  <span className="hidden sm:inline-block text-xs font-bold truncate max-w-[100px]">
+                    {(user?.fullName || user?.name || 'User').split(' ')[0]}
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
+
+                {isUserMenuOpen && (
+                  <div
+                    onMouseLeave={() => setIsUserMenuOpen(false)}
+                    className="absolute right-0 top-full mt-2 w-52 bg-card border border-border shadow-2xl rounded-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2"
+                  >
+                    <div className="px-3 py-2 border-b border-border/60 mb-1">
+                      <p className="text-xs font-bold text-foreground truncate">{user?.fullName || user?.name}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
+                    </div>
+
+                    <a
+                      href="/profile"
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                    >
+                      <User className="w-4 h-4 text-muted-foreground" />
+                      <span>My Account</span>
+                    </a>
+
+                    <a
+                      href="/track-order"
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                    >
+                      <Package className="w-4 h-4 text-muted-foreground" />
+                      <span>Track Orders</span>
+                    </a>
+
+                    {user?.role === 'admin' || user?.roles?.includes('ADMIN') || user?.roles?.includes('SUPER_ADMIN') ? (
+                      <a
+                        href="/admin/dashboard"
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-primary" />
+                        <span>Admin Dashboard</span>
+                      </a>
+                    ) : null}
+
+                    <button
+                      onClick={logout}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors mt-1 border-t border-border/40"
+                    >
+                      <LogOut className="w-4 h-4 text-destructive" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <a href="/login" className="hidden sm:block">
+                <Button variant="default" size="sm" className="rounded-xl font-bold text-xs px-4">
+                  Sign In
+                </Button>
+              </a>
+            )}
 
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -218,53 +277,6 @@ export function Header({ onOpenSearch }: HeaderProps) {
           </div>
         </div>
       </div>
-
-      <MegaNavigation
-        activeCategory={activeMegaCategory}
-        onCategoryHover={handleCategoryHover}
-        onClose={() => setActiveMegaCategory(null)}
-      />
-
-      {isMobileMenuOpen && (
-        <div className="lg:hidden bg-background border-b border-border p-4 space-y-4 shadow-xl">
-          <div className="space-y-1">
-            {NAV_LINKS.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center justify-between p-3 rounded-xl hover:bg-muted font-bold text-sm text-foreground"
-              >
-                <span>{link.label}</span>
-                {link.badge && (
-                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-md">
-                    {link.badge}
-                  </span>
-                )}
-              </a>
-            ))}
-          </div>
-
-          <div className="pt-4 border-t border-border space-y-2">
-            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-3">
-              Hardware Categories
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {MEGA_CATEGORIES.map((cat) => (
-                <a
-                  key={cat.id}
-                  href={`/categories/${cat.slug}`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-2.5 rounded-xl bg-muted/50 text-xs font-semibold text-foreground flex items-center justify-between"
-                >
-                  <span>{cat.name}</span>
-                  <span className="text-[10px] text-muted-foreground">({cat.itemCount})</span>
-                </a>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </header>
   );
 }

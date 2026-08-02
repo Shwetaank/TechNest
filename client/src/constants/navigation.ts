@@ -6,7 +6,7 @@ export const ANNOUNCEMENTS: AnnouncementItem[] = [
     text: '⚡ FESTIVE MONSOON SALE: Up to 40% OFF RTX 5090 Rigs & OLED Displays + No-Cost EMI',
     code: 'INDIA2026',
     linkText: 'Shop Indian Deals',
-    linkUrl: '/products?sale=true',
+    linkUrl: '/deals',
     badge: 'LIMITED OFFER',
   },
   {
@@ -20,7 +20,7 @@ export const ANNOUNCEMENTS: AnnouncementItem[] = [
     id: '3',
     text: '🎮 Build Your Custom Liquid-Cooled Rig with 24-Month EMI starting @ ₹4,999/mo',
     linkText: 'Configure Custom PC',
-    linkUrl: '/categories/custom-pcs',
+    linkUrl: '/build-pc',
     badge: 'NO-COST EMI',
   },
 ];
@@ -28,8 +28,8 @@ export const ANNOUNCEMENTS: AnnouncementItem[] = [
 export const NAV_LINKS: NavigationLink[] = [
   { label: 'Store', href: '/products' },
   { label: 'Categories', href: '/categories', isMega: true },
-  { label: 'Custom PCs', href: '/categories/custom-pcs', badge: 'BUILD' },
-  { label: 'Deals & Outlet', href: '/products?discount=true', badge: 'SALE' },
+  { label: 'Custom PCs', href: '/build-pc', badge: 'BUILD' },
+  { label: 'Deals & Outlet', href: '/deals', badge: 'SALE' },
   { label: 'About', href: '/about' },
 ];
 
@@ -74,7 +74,7 @@ export const MEGA_CATEGORIES: CategoryItem[] = [
       { name: 'Ultra Gaming PCs', slug: 'ultra-gaming-pcs', badge: '4K Ready' },
       { name: 'AI & Data Science Rigs', slug: 'ai-workstations' },
       { name: 'Mini-ITX Compact Builds', slug: 'mini-itx-pcs' },
-      { name: 'Custom Liquid Loop', slug: 'custom-pcs', badge: 'Custom' },
+      { name: '3D Custom Rig Builder', slug: 'build-pc', badge: 'Custom' },
     ],
   },
   {

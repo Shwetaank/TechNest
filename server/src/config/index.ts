@@ -15,14 +15,10 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(1, 'JWT_SECRET is required'),
   JWT_EXPIRES_IN: z.string().default('1d'),
   REFRESH_TOKEN_EXPIRES_IN: z.string().default('7d'),
-  RAZORPAY_KEY_ID: z.string().default('rzp_test_technest2026'),
-  RAZORPAY_KEY_SECRET: z.string().default('razorpay_secret_key_2026'),
+  PAYMENT_GATEWAY_DRIVER: z.string().default('dummy'),
   STRIPE_SECRET_KEY: z.string().default('sk_test_technest_stripe_2026'),
-  SMTP_HOST: z.string().default('smtp.mailtrap.io'),
-  SMTP_PORT: z.string().default('587'),
-  SMTP_USER: z.string().default('technest_mail'),
-  SMTP_PASS: z.string().default('technest_pass'),
-  SMTP_FROM: z.string().default('TechNest Store <noreply@technest.store>'),
+  RESEND_API_KEY: z.string().default('re_123456789_technest_resend_key'),
+  RESEND_FROM_EMAIL: z.string().default('TechNest Store <onboarding@resend.dev>'),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
 });
 
