@@ -1,11 +1,16 @@
-import { Button } from "./components/ui/button"
+import { ThemeProvider } from '@/providers/ThemeProvider';
+import { CartProvider } from '@/store/cartStore';
+import { WishlistProvider } from '@/store/wishlistStore';
+import { AppRoutes } from '@/routes';
 
-const MainPage = () => {
+export default function App() {
   return (
-    <div>
-      <Button>Click me</Button>
-    </div>
-  )
+    <ThemeProvider defaultTheme="dark">
+      <CartProvider>
+        <WishlistProvider>
+          <AppRoutes />
+        </WishlistProvider>
+      </CartProvider>
+    </ThemeProvider>
+  );
 }
-
-export default MainPage
