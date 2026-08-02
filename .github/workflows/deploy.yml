@@ -50,19 +50,27 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Check Azure Container Registry Credentials
-        id: acr-check
+      - name: Check Azure Cloud Credentials
+        id: azure-check
         run: |
           if [ -n "${{ secrets.ACR_USERNAME }}" ]; then
             echo "has_acr=true" >> $GITHUB_OUTPUT
             echo "✅ ACR Credentials detected."
           else
             echo "has_acr=false" >> $GITHUB_OUTPUT
-            echo "⚠️ ACR Secrets (ACR_LOGIN_SERVER, ACR_USERNAME, ACR_PASSWORD) are not configured in GitHub Secrets. Skipping Docker image push."
+            echo "⚠️ ACR Secrets are not configured. Skipping Docker image push."
+          fi
+
+          if [ -n "${{ secrets.AKS_CLUSTER_NAME }}" ]; then
+            echo "has_aks=true" >> $GITHUB_OUTPUT
+            echo "✅ AKS Credentials detected."
+          else
+            echo "has_aks=false" >> $GITHUB_OUTPUT
+            echo "⚠️ AKS Secrets are not configured. Skipping Kubernetes deployment."
           fi
 
       - name: Log in to Azure Container Registry (ACR)
-        if: steps.acr-check.outputs.has_acr == 'true'
+        if: steps.azure-check.outputs.has_acr == 'true'
         uses: azure/docker-login@v1
         with:
           login-server: ${{ secrets.ACR_LOGIN_SERVER }}
@@ -70,26 +78,26 @@ jobs:
           password: ${{ secrets.ACR_PASSWORD }}
 
       - name: Build & Push Frontend Image
-        if: steps.acr-check.outputs.has_acr == 'true'
+        if: steps.azure-check.outputs.has_acr == 'true'
         run: |
           docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/technest-client:${{ github.sha }} -t ${{ secrets.ACR_LOGIN_SERVER }}/technest-client:latest -f Dockerfile.client .
           docker push ${{ secrets.ACR_LOGIN_SERVER }}/technest-client:latest
 
       - name: Build & Push Backend Image
-        if: steps.acr-check.outputs.has_acr == 'true'
+        if: steps.azure-check.outputs.has_acr == 'true'
         run: |
           docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/technest-server:${{ github.sha }} -t ${{ secrets.ACR_LOGIN_SERVER }}/technest-server:latest -f Dockerfile.server .
           docker push ${{ secrets.ACR_LOGIN_SERVER }}/technest-server:latest
 
       - name: Set AKS Context & Deploy Manifests
-        if: steps.acr-check.outputs.has_acr == 'true' && secrets.AKS_CLUSTER_NAME != ''
+        if: steps.azure-check.outputs.has_aks == 'true'
         uses: azure/aks-set-context@v3
         with:
           resource-group: ${{ secrets.AZURE_RG }}
           cluster-name: ${{ secrets.AKS_CLUSTER_NAME }}
 
       - name: Deploy Kubernetes Manifests
-        if: steps.acr-check.outputs.has_acr == 'true' && secrets.AKS_CLUSTER_NAME != ''
+        if: steps.azure-check.outputs.has_aks == 'true'
         run: |
           kubectl apply -f k8s/server-deployment.yaml
           kubectl apply -f k8s/client-deployment.yaml
