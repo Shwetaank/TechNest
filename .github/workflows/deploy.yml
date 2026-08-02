@@ -26,6 +26,12 @@ jobs:
           npm run build
 
       - name: Install, Build & Test Backend
+        env:
+          DATABASE_URL: "postgresql://postgres.jgcvqbjveevmibehceym:Shwetank%40123@aws-1-ap-south-1.pooler.supabase.com:5432/postgres"
+          DIRECT_URL: "postgresql://postgres.jgcvqbjveevmibehceym:Shwetank%40123@aws-1-ap-south-1.pooler.supabase.com:5432/postgres"
+          SUPABASE_URL: "https://jgcvqbjveevmibehceym.supabase.co"
+          SUPABASE_SERVICE_ROLE_KEY: "sb_publishable__mneBqzqnNOPM0MCSYC9KA_TDbsET6B"
+          JWT_SECRET: "technest_production_jwt_signing_secret_987654321"
         run: |
           cd server
           npm install
