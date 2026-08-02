@@ -5,9 +5,11 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build-and-test:
+    name: Build & Test Applications
     runs-on: ubuntu-latest
 
     steps:
@@ -39,6 +41,7 @@ jobs:
           npm test
 
   docker-build-push:
+    name: Build Docker Images & Deploy
     needs: build-and-test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && secrets.ACR_USERNAME != ''
