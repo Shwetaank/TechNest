@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  technest-client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    ports:
+      - "80:80"
+    environment:
+      - VITE_API_URL=http://localhost:5000/api/v1
+    depends_on:
+      - technest-server
+    restart: always
+
+  technest-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_FROM_EMAIL=onboarding@resend.dev
+    restart: always

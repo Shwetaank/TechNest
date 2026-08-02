@@ -1,0 +1,70 @@
+name: TechNest Enterprise CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install & Test Frontend
+        run: |
+          cd client
+          npm ci
+          npm run build
+
+      - name: Install & Test Backend
+        run: |
+          cd server
+          npm ci
+          npm run build
+          npm test
+
+  docker-build-push:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure Container Registry (ACR)
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build & Push Frontend Image
+        run: |
+          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/technest-client:${{ github.sha }} -t ${{ secrets.ACR_LOGIN_SERVER }}/technest-client:latest -f Dockerfile.client .
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/technest-client:latest
+
+      - name: Build & Push Backend Image
+        run: |
+          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/technest-server:${{ github.sha }} -t ${{ secrets.ACR_LOGIN_SERVER }}/technest-server:latest -f Dockerfile.server .
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/technest-server:latest
+
+      - name: Set AKS Context & Deploy Manifests
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: ${{ secrets.AZURE_RG }}
+          cluster-name: ${{ secrets.AKS_CLUSTER_NAME }}
+
+      - name: Deploy Kubernetes Manifests
+        run: |
+          kubectl apply -f k8s/server-deployment.yaml
+          kubectl apply -f k8s/client-deployment.yaml
