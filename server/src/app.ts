@@ -16,6 +16,7 @@ import cartRoutes from './routes/cart.routes.js';
 import orderRoutes from './routes/order.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
 import newsletterRoutes from './routes/newsletter.routes.js';
+import contactRoutes from './routes/contact.routes.js';
 
 const app = express();
 
@@ -59,6 +60,7 @@ app.use('/api/v1/cart', cartRoutes);
 app.use('/api/v1/orders', orderRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/newsletter', newsletterRoutes);
+app.use('/api/v1/contact', contactRoutes);
 
 app.use((req: Request, res: Response) => {
   return sendResponse(res, 404, `Cannot ${req.method} ${req.originalUrl}`, {}, {}, [

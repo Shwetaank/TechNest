@@ -45,14 +45,14 @@ export function Header({ onOpenSearch }: HeaderProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleCategoryHover = (categoryId: string | null) => {
-    setActiveMegaCategory(categoryId);
+  const toggleMegaCategory = (categoryId: string) => {
+    setActiveMegaCategory((prev) => (prev === categoryId ? null : categoryId));
   };
 
   return (
     <header
       className={cn(
-        'sticky top-0 z-40 w-full transition-all duration-300',
+        'sticky top-0 z-40 w-full transition-all duration-300 relative',
         isScrolled
           ? 'glass-nav shadow-lg border-b border-border/80 py-2.5'
           : 'bg-background/80 backdrop-blur-md border-b border-border/40 py-3.5'
@@ -84,37 +84,41 @@ export function Header({ onOpenSearch }: HeaderProps) {
               {NAV_LINKS.map((link) => (
                 <div
                   key={link.label}
-                  className="relative py-2"
-                  onMouseEnter={() =>
-                    handleCategoryHover(link.isMega ? link.label.toLowerCase() : null)
-                  }
+                  className="py-2"
+                  onMouseEnter={() => {
+                    if (link.isMega) setActiveMegaCategory(link.label.toLowerCase());
+                  }}
                 >
-                  <a
-                    href={link.href}
-                    className={cn(
-                      'px-3.5 py-2 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center gap-1.5',
-                      link.badge
-                        ? 'text-primary font-bold bg-primary/10 hover:bg-primary/20'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-                    )}
-                  >
-                    {link.label}
-                    {link.isMega && (
-                      <ChevronDown className="w-3.5 h-3.5 transition-transform duration-200 group-hover:rotate-180" />
-                    )}
-                  </a>
-
-                  {link.isMega && activeMegaCategory === link.label.toLowerCase() && (
-                    <div
-                      onMouseLeave={() => handleCategoryHover(null)}
-                      className="absolute top-full left-0 pt-2 animate-in fade-in slide-in-from-top-2 duration-200"
+                  {link.isMega ? (
+                    <button
+                      onClick={() => toggleMegaCategory(link.label.toLowerCase())}
+                      className={cn(
+                        'px-3.5 py-2 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 cursor-pointer',
+                        activeMegaCategory === link.label.toLowerCase()
+                          ? 'text-primary font-bold bg-primary/10'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                      )}
                     >
-                      <MegaNavigation
-                        activeCategory={activeMegaCategory}
-                        onCategoryHover={handleCategoryHover}
-                        onClose={() => setActiveMegaCategory(null)}
+                      <span>{link.label}</span>
+                      <ChevronDown
+                        className={cn(
+                          'w-3.5 h-3.5 transition-transform duration-200',
+                          activeMegaCategory === link.label.toLowerCase() && 'rotate-180 text-primary'
+                        )}
                       />
-                    </div>
+                    </button>
+                  ) : (
+                    <a
+                      href={link.href}
+                      className={cn(
+                        'px-3.5 py-2 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center gap-1.5',
+                        link.badge
+                          ? 'text-primary font-bold bg-primary/10 hover:bg-primary/20'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                      )}
+                    >
+                      {link.label}
+                    </a>
                   )}
                 </div>
               ))}
@@ -251,7 +255,7 @@ export function Header({ onOpenSearch }: HeaderProps) {
 
                     <button
                       onClick={logout}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors mt-1 border-t border-border/40"
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors mt-1 border-t border-border/40 cursor-pointer"
                     >
                       <LogOut className="w-4 h-4 text-destructive" />
                       <span>Sign Out</span>
@@ -277,6 +281,14 @@ export function Header({ onOpenSearch }: HeaderProps) {
           </div>
         </div>
       </div>
+
+      {/* Full Width Mega Navigation Dropdown */}
+      {activeMegaCategory && (
+        <MegaNavigation
+          activeCategory={activeMegaCategory}
+          onClose={() => setActiveMegaCategory(null)}
+        />
+      )}
     </header>
   );
 }

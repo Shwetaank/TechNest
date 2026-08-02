@@ -20,14 +20,14 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions) {
     });
 
     if (response.error) {
-      logger.warn({ error: response.error, to, subject }, '⚠️ Resend returned API error, operating in test sandbox mode');
-      return { data: { id: `resend-test-${Date.now()}` }, error: null };
+      logger.error({ error: response.error, to, subject }, '❌ Resend API returned error');
+      return response;
     }
 
-    logger.info({ to, subject, id: response.data?.id }, '📧 Email dispatched successfully via Resend API');
+    logger.info({ to, subject, id: response.data?.id }, '📧 Email dispatched via Resend API');
     return response;
   } catch (error: any) {
-    logger.error({ error: error?.message || error, to, subject }, '❌ Resend Email exception caught safely');
-    return { data: { id: `resend-fallback-${Date.now()}` }, error: null };
+    logger.error({ error: error?.message || error, to, subject }, '❌ Resend Email exception');
+    return { data: null, error };
   }
 }
