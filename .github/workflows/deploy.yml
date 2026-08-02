@@ -19,16 +19,16 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install & Test Frontend
+      - name: Install & Build Frontend
         run: |
           cd client
-          npm ci
+          npm install
           npm run build
 
-      - name: Install & Test Backend
+      - name: Install, Build & Test Backend
         run: |
           cd server
-          npm ci
+          npm install
           npm run build
           npm test
 
