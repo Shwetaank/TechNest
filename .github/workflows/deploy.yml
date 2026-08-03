@@ -45,6 +45,7 @@ jobs:
     needs: build-and-test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    environment: TechNest
 
     steps:
       - name: Checkout Source Code
