@@ -45,7 +45,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: technest-server-service
+  name: technest-server
 spec:
   type: ClusterIP
   ports:
