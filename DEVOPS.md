@@ -1,6 +1,6 @@
-# TechNest Enterprise E-Commerce: DevOps & Infrastructure Architecture
+# TechNest Enterprise E-Commerce: DevOps & Local Architecture
 
-This repository hosts a production-grade, modular full-stack e-commerce application (**React 19 + TypeScript** frontend, **Express 5 + Prisma 6** backend) engineered with modern containerized development and CI/CD practices.
+This repository hosts a production-grade, modular full-stack e-commerce application (**React 19 + TypeScript** frontend, **Express 5 + Prisma 6** backend) engineered with modern local development and CI/CD practices.
 
 ---
 
@@ -10,21 +10,48 @@ This repository hosts a production-grade, modular full-stack e-commerce applicat
 | :--- | :--- | :--- |
 | **1. Modular Web Application** | Separate React 19 Client & Express 5 Server | [`client/`](file:///d:/Projects/AlmaBetter/Specialisation%20Track/Module%202%20Dev-Ops/TechNest/client) & [`server/`](file:///d:/Projects/AlmaBetter/Specialisation%20Track/Module%202%20Dev-Ops/TechNest/server) |
 | **2. Source Control Integration** | Git Branching Strategy & PR Workflows | Hosted on GitHub `Shwetaank/TechNest` |
-| **3. Containerization** | Multi-stage Docker builds | [`Dockerfile.client`](file:///d:/Projects/AlmaBetter/Specialisation%20Track/Module%202%20Dev-Ops/TechNest/Dockerfile.client), [`Dockerfile.server`](file:///d:/Projects/AlmaBetter/Specialisation%20Track/Module%202%20Dev-Ops/TechNest/Dockerfile.server) |
-| **4. Local Orchestration** | Multi-container Compose engine | [`docker-compose.yml`](file:///d:/Projects/AlmaBetter/Specialisation%20Track/Module%202%20Dev-Ops/TechNest/docker-compose.yml) |
-| **5. CI/CD Pipeline** | GitHub Actions CI Workflow for Builds & Tests | [`.github/workflows/ci.yml`](file:///d:/Projects/AlmaBetter/Specialisation%20Track/Module%202%20Dev-Ops/TechNest/.github/workflows/ci.yml) |
+| **3. CI/CD Pipeline** | GitHub Actions CI Workflow for Builds & Tests | [`.github/workflows/ci.yml`](file:///d:/Projects/AlmaBetter/Specialisation%20Track/Module%202%20Dev-Ops/TechNest/.github/workflows/ci.yml) |
 
 ---
 
 ## 🛠️ Step-by-Step Local Guide
 
-### 1. Local Container Verification (Docker Compose)
-To run the full-stack architecture locally in Docker containers:
-```bash
-docker-compose up --build
-```
-* **Frontend UI**: `http://localhost:80`
-* **Backend REST API**: `http://localhost:5000/health`
+### 1. Local Run (Development Mode)
+To run both backend and frontend applications locally:
+
+#### Backend:
+1. Navigate to the `server/` directory:
+   ```bash
+   cd server
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Generate Prisma client:
+   ```bash
+   npx prisma generate
+   ```
+4. Start development server:
+   ```bash
+   npm run dev
+   ```
+   * **Backend REST API**: `http://localhost:5000/health`
+
+#### Frontend:
+1. Navigate to the `client/` directory:
+   ```bash
+   cd client
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start development server:
+   ```bash
+   npm run dev
+   ```
+   * **Frontend UI**: `http://localhost:5173` (or port specified in terminal)
 
 ---
 
