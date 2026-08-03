@@ -1,86 +1,194 @@
-# TechNest Enterprise E-Commerce: DevOps & Local Architecture
+# 🛠️ TechNest DevOps & Cloud Infrastructure Architecture Guide
 
-This repository hosts a production-grade, modular full-stack e-commerce application (**React 19 + TypeScript** frontend, **Express 5 + Prisma 6** backend) engineered with modern local development, containerized testing, and CI/CD practices.
+This comprehensive reference document outlines the complete DevOps implementation, cloud architecture, security posture, and CI/CD pipelines engineered for the **TechNest Enterprise E-Commerce Platform** on **Microsoft Azure**.
 
 ---
 
-## 🏗️ Architecture & Requirements Checklist
+## 🏗️ 1. Complete Cloud Infrastructure Blueprint
 
-| Requirement | Implementation | Component File / Location |
+| Component / Layer | Azure Resource | Specification / Configuration |
 | :--- | :--- | :--- |
-| **1. Modular Web Application** | Separate React 19 Client & Express 5 Server | [`client/`](file:///d:/Projects/AlmaBetter/Specialisation%20Track/Module%202%20Dev-Ops/TechNest/client) & [`server/`](file:///d:/Projects/AlmaBetter/Specialisation%20Track/Module%202%20Dev-Ops/TechNest/server) |
-| **2. Source Control Integration** | Git Branching Strategy & PR Workflows | Hosted on GitHub `Shwetaank/TechNest` |
-| **3. Containerization** | Multi-stage Docker builds | [`Dockerfile.client`](file:///d:/Projects/AlmaBetter/Specialisation%20Track/Module%202%20Dev-Ops/TechNest/Dockerfile.client), [`Dockerfile.server`](file:///d:/Projects/AlmaBetter/Specialisation%20Track/Module%202%20Dev-Ops/TechNest/Dockerfile.server) |
-| **4. Local Orchestration** | Multi-container Compose engine | [`docker-compose.yml`](file:///d:/Projects/AlmaBetter/Specialisation%20Track/Module%202%20Dev-Ops/TechNest/docker-compose.yml) |
-| **5. CI/CD Pipeline** | GitHub Actions CI/CD Pipeline for Builds, Tests & Docker Builds | [`.github/workflows/deploy.yml`](file:///d:/Projects/AlmaBetter/Specialisation%20Track/Module%202%20Dev-Ops/TechNest/.github/workflows/deploy.yml) |
+| **Subscription** | `3f70ff53-de47-452c-985e-3e197d6aaa61` | Pay-As-You-Go Azure Subscription |
+| **Resource Group** | `Tech_Nest` | Region: `centralindia` |
+| **Kubernetes Cluster** | `aks-technest` | Kubernetes v1.35.6, Standard_D4ds_v4 (4 vCPU, 16GB RAM), Azure CNI Overlay, Ephemeral OS Disk |
+| **Container Registry** | `technest.azurecr.io` | Azure Container Registry (Basic SKU, Admin Enabled) |
+| **Secrets Management** | `kv-technest-shwetaank` | Azure Key Vault with Azure RBAC authorization model |
+| **Secrets Driver** | `azure-keyvault-secrets-provider` | Secrets Store CSI Driver Add-on with auto-rotation enabled |
+| **Log Analytics** | `law-technest` | Azure Log Analytics Workspace (PerGB2018 SKU, 30-day retention) |
+| **Application Performance** | `appi-technest` | Workspace-based Application Insights instance linked to `law-technest` |
+| **Container Insights** | `ama-logs` DaemonSet | Azure Monitor Linux agent streaming pod stdout/stderr and cluster metrics |
+| **CI/CD Platform** | Azure DevOps & GitHub Actions | `TechNest-CI-CD` in Azure DevOps organization `spmorey87` + GitHub Actions |
 
 ---
 
-## 🛠️ Step-by-Step Local Guide
+## 🔐 2. Azure Key Vault Secrets Store CSI Driver Setup
 
-### 1. Local Container Verification (Docker Compose)
-To run the full-stack architecture locally in Docker containers:
+To prevent exposing sensitive credentials (database passwords, API keys) in source code or plain environment variables, secrets are retrieved on-demand from Azure Key Vault directly into container memory via CSI driver volumes.
+
+### Architecture & Data Flow
+1. **Secrets Ingestion**:
+   * `database-url`: Supabase PostgreSQL connection string.
+   * `resend-api-key`: Resend email API token.
+2. **Managed Identity Authorization**:
+   * AKS provisions a User-Assigned Managed Identity: `azurekeyvaultsecretsprovider-aks-technest` (`clientId: 63473a46-a621-442b-bef9-5f43763899bd`).
+   * RBAC Role Assigned: **`Key Vault Secrets User`** on vault `kv-technest-shwetaank`.
+3. **`SecretProviderClass` Definition**:
+   ```yaml
+   apiVersion: secrets-store.csi.x-k8s.io/v1
+   kind: SecretProviderClass
+   metadata:
+     name: technest-azure-keyvault
+     namespace: default
+   spec:
+     provider: azure
+     parameters:
+       usePodIdentity: "false"
+       useVMManagedIdentity: "true"
+       userAssignedIdentityID: "63473a46-a621-442b-bef9-5f43763899bd"
+       keyvaultName: "kv-technest-shwetaank"
+       tenantId: "8c286706-4769-4a2a-b614-228f54eb6b3e"
+       cloudName: "AzurePublicCloud"
+       objects: |
+         array:
+           - |
+             objectName: database-url
+             objectType: secret
+           - |
+             objectName: resend-api-key
+             objectType: secret
+     secretObjects:
+       - secretName: technest-secrets
+         type: Opaque
+         data:
+           - objectName: database-url
+             key: database-url
+           - objectName: resend-api-key
+             key: resend-api-key
+   ```
+4. **Pod Volume Mounting**:
+   * The `technest-server` deployment mounts `/mnt/secrets-store` via the `secrets-store.csi.k8s.io` CSI driver, triggering synchronization into the Kubernetes Secret `technest-secrets`.
+
+---
+
+## 📊 3. Observability, Logging & Monitoring
+
+### A. Azure Monitor Container Insights
+Container Insights is enabled via the `monitoring` AKS add-on. The `ama-logs` (Azure Monitor Agent) daemonset streams real-time data to Log Analytics Workspace `law-technest`.
+
+#### Key Kusto (KQL) Diagnostic Queries:
+* **Container Log Stream (stdout/stderr)**:
+  ```kusto
+  ContainerLogV2
+  | where PodNamespace == "default"
+  | project TimeGenerated, PodName, ContainerName, LogMessage
+  | order by TimeGenerated desc
+  | limit 100
+  ```
+* **Pod CPU & Memory Utilization**:
+  ```kusto
+  InsightsMetrics
+  | where Namespace == "container.azm.ms/memory" or Namespace == "container.azm.ms/cpu"
+  | summarize avg(Val) by Name, bin(TimeGenerated, 5m)
+  | render timechart
+  ```
+* **Kubernetes Pod Inventory & Restarts**:
+  ```kusto
+  KubePodInventory
+  | where Namespace == "default"
+  | project TimeGenerated, Name, PodStatus, PodRestartCount, Node
+  ```
+
+### B. Application Insights Telemetry
+* Linked directly to `law-technest`.
+* Telemetry Connection String is injected into `technest-server` pods:
+  ```env
+  APPLICATIONINSIGHTS_CONNECTION_STRING=InstrumentationKey=271c3b1e-b839-45de-b0a4-8c14f96b667a;IngestionEndpoint=https://centralindia-0.in.applicationinsights.azure.com/;...
+  ```
+* Provides live end-to-end transaction tracing, dependency duration tracking (Prisma/PostgreSQL, Redis queries), and unhandled exception logging.
+
+---
+
+## 🚀 4. Dual CI/CD Pipeline Architecture
+
+### Pipeline 1: Azure DevOps Pipeline (`azure-pipelines.yml`)
+Configured in Azure DevOps organization `https://dev.azure.com/spmorey87/TechNest`:
+* **Triggers**: Automated triggers on `main` branch commits and manual runs.
+* **Build Stage**:
+  1. Clones source repository.
+  2. Runs Node.js dependency installation and build verification.
+  3. Builds Docker images for `technest-client` and `technest-server`.
+  4. Authenticates to Azure Container Registry via Service Connection `Azure-Subscription-Connection`.
+  5. Pushes images tagged with `$(Build.BuildId)` and `latest`.
+* **Deploy Stage**:
+  1. Authenticates to AKS cluster `aks-technest`.
+  2. Executes `kubectl apply -f k8s/` to deploy manifests (`SecretProviderClass`, Deployments, Services).
+  3. Validates rollout completion via `kubectl rollout status`.
+
+### Pipeline 2: GitHub Actions (`.github/workflows/deploy.yml`)
+Configured in GitHub repository `https://github.com/Shwetaank/TechNest`:
+* **Triggers**: Pull requests and commits targeting `main`.
+* **Matrix Validation**: Parallel client and server test suites, linting, and Docker container verification.
+* **Continuous Delivery**: Automatically builds and pushes updated images to ACR upon PR merge.
+
+---
+
+## 💻 5. Local Development & Testing Instructions
+
+### A. Full Stack with Docker Compose
 ```bash
-docker-compose up --build
+# Clone the repository
+git clone https://github.com/Shwetaank/TechNest.git
+cd TechNest
+
+# Launch all microservices, databases, and caches
+docker-compose up --build -d
+
+# Check running containers
+docker-compose ps
+
+# View aggregate container logs
+docker-compose logs -f
 ```
-* **Frontend UI**: `http://localhost:80`
-* **Backend REST API**: `http://localhost:5000/health`
+
+### B. Bare Metal Development
+```bash
+# 1. Backend Server
+cd server
+npm install
+npx prisma generate
+npm run dev
+
+# 2. Frontend Client (in a new terminal)
+cd ../client
+npm install
+npm run dev
+```
 
 ---
 
-### 2. Standard Local Run (No Docker)
-To run both backend and frontend applications locally:
+## ☸️ 6. Kubernetes Cluster Management Cheat Sheet
 
-#### Backend:
-1. Navigate to the `server/` directory:
-   ```bash
-   cd server
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Generate Prisma client:
-   ```bash
-   npx prisma generate
-   ```
-4. Start development server:
-   ```bash
-   npm run dev
-   ```
-   * **Backend REST API**: `http://localhost:5000/health`
+```bash
+# Connect to AKS Cluster
+az aks get-credentials --resource-group Tech_Nest --name aks-technest --overwrite-existing
 
-#### Frontend:
-1. Navigate to the `client/` directory:
-   ```bash
-   cd client
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start development server:
-   ```bash
-   npm run dev
-   ```
-   * **Frontend UI**: `http://localhost:5173` (or port specified in terminal)
+# Check All Pods, Services, and Secrets
+kubectl get pods,services,secretproviderclass,secrets -o wide
+
+# Check Azure Monitor & CSI Driver DaemonSets
+kubectl get daemonsets,pods -n kube-system
+
+# Stream Backend Logs
+kubectl logs -l app=technest-server --tail=50 -f
+
+# Trigger Rolling Restart of Deployments
+kubectl rollout restart deployment/technest-server
+kubectl rollout restart deployment/technest-client
+```
 
 ---
 
-### 3. Continuous Integration & Continuous Deployment (CI/CD) Pipeline
-The GitHub Actions workflow in [`.github/workflows/deploy.yml`](file:///d:/Projects/AlmaBetter/Specialisation%20Track/Module%202%20Dev-Ops/TechNest/.github/workflows/deploy.yml) triggers on every push to `main`, pull requests targeting `main`, and manual run (`workflow_dispatch`):
-
-1. **Build & Test**:
-   * Installs node dependencies and compiles the React 19 Frontend.
-   * Installs node dependencies, runs Prisma client generation, builds the Express 5 Backend, and executes the unit/integration test suites (`npm test`).
-2. **Docker Build & Verification**:
-   * Multi-stage build process for Frontend Client ([`Dockerfile.client`](file:///d:/Projects/AlmaBetter/Specialisation%20Track/Module%202%20Dev-Ops/TechNest/Dockerfile.client)) and Backend Server ([`Dockerfile.server`](file:///d:/Projects/AlmaBetter/Specialisation%20Track/Module%202%20Dev-Ops/TechNest/Dockerfile.server)).
-   * Always runs on push and PR to verify Docker compilation works successfully in a clean container environment.
-3. **Docker Push (Conditional)**:
-   * Logs into and pushes the Docker images to the Azure Container Registry (ACR) if the required credentials are configured in GitHub Secrets.
-
-#### Required GitHub Secrets for ACR Push:
-To enable pushing the built images to your Azure Container Registry, add the following secrets under **Settings > Secrets and variables > Actions** in your GitHub repository:
-* `ACR_LOGIN_SERVER`: The ACR server name (e.g., `technest.azurecr.io`)
-* `ACR_USERNAME`: The admin username of your ACR
-* `ACR_PASSWORD`: The admin password of your ACR
+## 🛡️ 7. Disaster Recovery & Zero-Downtime Strategy
+* **Rolling Updates**: Kubernetes Deployments use `maxSurge: 25%` and `maxUnavailable: 0` to ensure zero downtime during rollouts.
+* **Multi-Replica Resiliency**: Both Client and Server deployments run multiple replicas across the cluster nodes.
+* **External Managed Databases**: Stateful data is isolated in managed Supabase PostgreSQL and Key Vault, ensuring compute pods remain stateless and easily replaceable.
