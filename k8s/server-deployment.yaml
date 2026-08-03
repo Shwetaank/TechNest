@@ -24,6 +24,8 @@ spec:
               value: "5000"
             - name: NODE_ENV
               value: "production"
+            - name: APPLICATIONINSIGHTS_CONNECTION_STRING
+              value: "InstrumentationKey=271c3b1e-b839-45de-b0a4-8c14f96b667a;IngestionEndpoint=https://centralindia-0.in.applicationinsights.azure.com/;LiveEndpoint=https://centralindia.livediagnostics.monitor.azure.com/;ApplicationId=d530bb1b-77f8-4760-b551-73d3709b365f"
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
@@ -34,6 +36,10 @@ spec:
                 secretKeyRef:
                   name: technest-secrets
                   key: resend-api-key
+          volumeMounts:
+            - name: secrets-store-inline
+              mountPath: "/mnt/secrets-store"
+              readOnly: true
           resources:
             requests:
               memory: "256Mi"
@@ -41,6 +47,13 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
+      volumes:
+        - name: secrets-store-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "technest-azure-keyvault"
 ---
 apiVersion: v1
 kind: Service
