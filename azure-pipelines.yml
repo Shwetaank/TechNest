@@ -1,0 +1,61 @@
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+  - stage: CI
+    displayName: 'Continuous Integration'
+    jobs:
+      - job: BuildAndTest
+        displayName: 'Build and Test Application'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '20.x'
+            displayName: 'Install Node.js'
+
+          - script: |
+              cd server
+              npm install
+              npx prisma generate
+            displayName: 'Install server dependencies and generate Prisma client'
+
+          - script: |
+              cd client
+              npm install
+            displayName: 'Install client dependencies'
+
+          - script: |
+              cd server
+              npm run test:ci --if-present
+            displayName: 'Run backend tests'
+
+          - script: |
+              cd client
+              npm run test --if-present
+            displayName: 'Run frontend tests'
+
+          - script: |
+              docker build -f Dockerfile.client -t technest-client:latest .
+              docker build -f Dockerfile.server -t technest-server:latest .
+            displayName: 'Verify Docker image builds'
+
+  - stage: CD
+    displayName: 'Continuous Deployment'
+    dependsOn: CI
+    condition: succeeded()
+    jobs:
+      - job: DeployToAKS
+        displayName: 'Deploy to Azure Kubernetes Service'
+        steps:
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: 'Azure-Subscription-Connection'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                az aks get-credentials --resource-group Tech_Nest --name aks-technest --overwrite-existing
+                kubectl apply -f k8s/
+            displayName: 'Deploy Kubernetes Manifests to AKS'
