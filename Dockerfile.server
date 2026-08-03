@@ -1,0 +1,34 @@
+# Multi-Stage Production Build for Express Node.js Backend
+FROM node:24-alpine AS builder
+
+WORKDIR /app
+
+# Copy package manifests and install dependencies
+COPY server/package*.json ./
+COPY server/prisma ./prisma/
+RUN npm install
+RUN npx prisma generate
+
+# Copy source and compile TypeScript to JS
+COPY server/ ./
+RUN npm run build
+
+# Stage 2: Runtime Environment
+FROM node:24-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+COPY --chown=node:node server/package*.json ./
+COPY --chown=node:node server/prisma ./prisma/
+RUN npm install --omit=dev
+
+COPY --from=builder --chown=node:node /app/dist ./dist
+COPY --from=builder --chown=node:node /app/node_modules/@prisma/client ./node_modules/@prisma/client
+
+EXPOSE 5000
+
+USER node
+
+CMD ["node", "dist/server.js"]
