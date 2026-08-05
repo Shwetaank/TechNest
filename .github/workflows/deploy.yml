@@ -29,11 +29,11 @@ jobs:
 
       - name: Install, Build & Test Backend
         env:
-          DATABASE_URL: "postgresql://postgres.jgcvqbjveevmibehceym:Shwetank%40123@aws-1-ap-south-1.pooler.supabase.com:5432/postgres"
-          DIRECT_URL: "postgresql://postgres.jgcvqbjveevmibehceym:Shwetank%40123@aws-1-ap-south-1.pooler.supabase.com:5432/postgres"
-          SUPABASE_URL: "https://jgcvqbjveevmibehceym.supabase.co"
-          SUPABASE_SERVICE_ROLE_KEY: "sb_publishable__mneBqzqnNOPM0MCSYC9KA_TDbsET6B"
-          JWT_SECRET: "technest_production_jwt_signing_secret_987654321"
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: |
           cd server
           npm install
@@ -77,6 +77,26 @@ jobs:
       - name: Build Backend Image (Verification)
         run: |
           docker build -t technest-server:latest -f Dockerfile.server .
+
+      - name: Run Trivy vulnerability scanner on Frontend Image
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: 'technest-client:latest'
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Run Trivy vulnerability scanner on Backend Image
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: 'technest-server:latest'
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
 
       - name: Log in to Azure Container Registry (ACR)
         if: steps.azure-check.outputs.has_acr == 'true'
